@@ -1,1 +1,1 @@
-$PYTHON_ENV/bin/python ./example.py
+"$PYTHON_ENV"/bin/python ./example.py
