@@ -11,7 +11,7 @@ geometry = {
     "line3": {"type": "line", "data": ("x3", "x4")},
     "line4": {"type": "line", "data": ("x4", "x1")},
     "surface1": {
-        "type": "surface filling",
+        "type": "surface-filling",
         "data": ("line1", "line2", "line3", "line4"),
     },
 }

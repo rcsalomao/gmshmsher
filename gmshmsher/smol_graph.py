@@ -66,21 +66,3 @@ class Graph(object):
 
     def get_edges(self):
         pass
-
-
-if __name__ == "__main__":
-    g = Graph()
-    g.add_edge(0, 1, 3)
-    g.add_edge(0, 2, 4)
-    g.add_edge(1, 3, 5)
-    g.add_edge(2, 3, 6)
-    pp(g.adj_list)
-    pp(g.inv_adj_list)
-    print(g.get_weight(2, 3))
-    print(g.get_vertices())
-    pp(g.get_vertex_edges(2))
-    # g.del_edge(1, 3)
-    # g.del_edge(2, 3)
-    g.del_vertex(1)
-    pp(g.adj_list)
-    pp(g.inv_adj_list)

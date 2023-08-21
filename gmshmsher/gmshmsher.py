@@ -19,7 +19,7 @@ def get_geometry_graph(geometry: dict):
             case "line":
                 for u in value["data"]:
                     g.add_edge(u, key)
-            case "surface filling":
+            case "surface-filling":
                 for u in value["data"]:
                     g.add_edge(u, key)
             case "volume":
@@ -45,12 +45,12 @@ def get_fem_elements(
     gmsh_definition,
     fem_mesh,
     geo_key,
-    gmsh_tag,
-    elem_dim,
+    dim_tag,
     element_type_n_nodes_map: dict,
 ):
-    element_type = gmsh.model.mesh.getElementTypes(elem_dim, gmsh_tag)[0]
-    elements, nodes = gmsh.model.mesh.getElementsByType(element_type, gmsh_tag)
+    dim, tag = dim_tag
+    element_type = gmsh.model.mesh.getElementTypes(dim, tag)[0]
+    elements, nodes = gmsh.model.mesh.getElementsByType(element_type, tag)
     n_nodes = element_type_n_nodes_map.get(element_type)
     if n_nodes:
         elements_data = []
@@ -65,8 +65,8 @@ def get_fem_elements(
         fem_mesh[geo_key] = elements_data
     else:
         print(
-            "Wrong element type ({element_type}) for geometry: {geometry_name}".format(
-                element_type=element_type, geometry_name=geo_key
+            "Unsupported element type ({elem_type}) for geometry: {geo_key}".format(
+                elem_type=element_type, geo_key=geo_key
             )
         )
         gmsh.finalize()
@@ -89,51 +89,66 @@ def get_fem_mesh(geometry_definition, open_gui="no", gmsh_hook=None):
         geometry = geometry_definition[geo_key]
         match geometry["type"]:
             case "point":
-                gmsh_definition[geo_key] = apply_function(
-                    gmsh.model.occ.addPoint,
-                    geometry["data"],
-                    geometry.get("extra_args"),
+                gmsh_definition[geo_key] = (
+                    0,
+                    apply_function(
+                        gmsh.model.occ.addPoint,
+                        geometry["data"],
+                        geometry.get("extra_args"),
+                    ),
                 )
             case "line":
                 geo_start_key, geo_end_key = geometry["data"]
-                gmsh_start_tag = gmsh_definition[geo_start_key]
-                gmsh_end_tag = gmsh_definition[geo_end_key]
-                gmsh_definition[geo_key] = apply_function(
-                    gmsh.model.occ.addLine,
-                    (gmsh_start_tag, gmsh_end_tag),
-                    geometry.get("extra_args"),
+                _, gmsh_start_tag = gmsh_definition[geo_start_key]
+                _, gmsh_end_tag = gmsh_definition[geo_end_key]
+                gmsh_definition[geo_key] = (
+                    1,
+                    apply_function(
+                        gmsh.model.occ.addLine,
+                        (gmsh_start_tag, gmsh_end_tag),
+                        geometry.get("extra_args"),
+                    ),
                 )
-            case "surface filling":
+            case "surface-filling":
                 geo_curves = geometry["data"]
                 curve_loop = []
                 for curve in geo_curves:
-                    curve_loop.append(gmsh_definition[curve])
-                gmsh_definition[geo_key] = apply_function(
-                    gmsh.model.occ.addSurfaceFilling,
-                    (gmsh.model.occ.addCurveLoop(curve_loop),),
-                    geometry.get("extra_args"),
+                    _, gmsh_curve_tag = gmsh_definition[curve]
+                    curve_loop.append(gmsh_curve_tag)
+                gmsh_definition[geo_key] = (
+                    2,
+                    apply_function(
+                        gmsh.model.occ.addSurfaceFilling,
+                        (gmsh.model.occ.addCurveLoop(curve_loop),),
+                        geometry.get("extra_args"),
+                    ),
                 )
             case "volume":
                 geo_contour_surfaces = geometry["data"]["contour"]
                 contour_surfaces_loop = []
                 for surface in geo_contour_surfaces:
-                    contour_surfaces_loop.append(gmsh_definition[surface])
+                    _, gmsh_surface_tag = gmsh_definition[surface]
+                    contour_surfaces_loop.append(gmsh_surface_tag)
                 hole_surfaces_loops = []
                 geo_holes_surfaces = geometry["data"].get("holes")
                 if geo_holes_surfaces:
                     for hole_surfaces in geo_holes_surfaces:
                         hole_surfaces_loop = []
                         for surface in hole_surfaces:
-                            hole_surfaces_loop.append(gmsh_definition[surface])
+                            _, gmsh_surface_tag = gmsh_definition[surface]
+                            hole_surfaces_loop.append(gmsh_surface_tag)
                         hole_surfaces_loops.append(hole_surfaces_loop)
                 surfaces_loops = [contour_surfaces_loop] + hole_surfaces_loops
                 shell_tags = [
                     gmsh.model.occ.addSurfaceLoop(loop) for loop in surfaces_loops
                 ]
-                gmsh_definition[geo_key] = apply_function(
-                    gmsh.model.occ.addVolume,
-                    (shell_tags,),
-                    geometry.get("extra_args"),
+                gmsh_definition[geo_key] = (
+                    3,
+                    apply_function(
+                        gmsh.model.occ.addVolume,
+                        (shell_tags,),
+                        geometry.get("extra_args"),
+                    ),
                 )
             case _:
                 print(
@@ -158,37 +173,15 @@ def get_fem_mesh(geometry_definition, open_gui="no", gmsh_hook=None):
         while gmsh.fltk.isAvailable():
             gmsh.fltk.wait()
 
+    element_type_n_nodes_map = {1: 2, 2: 3, 4: 4, 15: 1}
     fem_mesh = {}
     get_nodes(fem_mesh)
-    for geo_key, gmsh_tag in gmsh_definition.items():
-        geo_type = geometry_definition[geo_key]["type"]
-        match geo_type:
-            case "point":
-                elem_dim = 0
-                element_type_n_nodes_map = {15: 1}
-            case "line":
-                elem_dim = 1
-                element_type_n_nodes_map = {1: 2}
-            case "surface filling":
-                elem_dim = 2
-                element_type_n_nodes_map = {2: 3}
-            case "volume":
-                elem_dim = 3
-                element_type_n_nodes_map = {4: 4}
-            case _:
-                print(
-                    "Unsupported geometry type ({geo_type}) for geometry: {geo_key}".format(
-                        geo_type=geo_type, geo_key=geo_key
-                    )
-                )
-                gmsh.finalize()
-                exit()
+    for geo_key, dim_tag in gmsh_definition.items():
         get_fem_elements(
             gmsh_definition,
             fem_mesh,
             geo_key,
-            gmsh_tag,
-            elem_dim,
+            dim_tag,
             element_type_n_nodes_map,
         )
 
