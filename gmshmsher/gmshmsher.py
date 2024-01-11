@@ -19,15 +19,25 @@ def get_geometry_graph(geometry: dict):
             case "line":
                 for u in value["data"]:
                     g.add_edge(u, key)
+            case "circle":
+                g.add_vertex(key)
+            case "plane-surface":
+                for u in value["data"]["contour"]:
+                    g.add_edge(u, key)
+                if value["data"].get("holes"):
+                    for holes_curves in value["data"]["holes"]:
+                        for u in holes_curves:
+                            g.add_edge(u, key)
             case "surface-filling":
                 for u in value["data"]:
                     g.add_edge(u, key)
             case "volume":
                 for u in value["data"]["contour"]:
                     g.add_edge(u, key)
-                for surfaces in value["data"]["holes"]:
-                    for u in surfaces:
-                        g.add_edge(u, key)
+                if value["data"].get("holes"):
+                    for holes_surfaces in value["data"]["holes"]:
+                        for u in holes_surfaces:
+                            g.add_edge(u, key)
             case _:
                 raise Exception("Geometry type not supported")
     return g
@@ -109,6 +119,44 @@ def get_fem_mesh(geometry_definition, open_gui="no", gmsh_hook=None):
                         geometry.get("extra_args"),
                     ),
                 )
+            case "circle":
+                coords = geometry["data"]["coords"]
+                radius = geometry["data"]["radius"]
+                gmsh_definition[geo_key] = (
+                    1,
+                    apply_function(
+                        gmsh.model.occ.addCircle,
+                        (*coords, radius),
+                        geometry.get("extra_args"),
+                    ),
+                )
+            case "plane-surface":
+                geo_contour_curves = geometry["data"]["contour"]
+                contour_curves_loop = []
+                for curve in geo_contour_curves:
+                    _, gmsh_curve_tag = gmsh_definition[curve]
+                    contour_curves_loop.append(gmsh_curve_tag)
+                holes_curves_loops = []
+                geo_holes_curves = geometry["data"].get("holes")
+                if geo_holes_curves:
+                    for hole_curves in geo_holes_curves:
+                        hole_curves_loop = []
+                        for hole_curve in hole_curves:
+                            _, gmsh_curve_tag = gmsh_definition[hole_curve]
+                            hole_curves_loop.append(gmsh_curve_tag)
+                        holes_curves_loops.append(hole_curves_loop)
+                curves_loops = [contour_curves_loop] + holes_curves_loops
+                curve_tags = [
+                    gmsh.model.occ.addCurveLoop(loop) for loop in curves_loops
+                ]
+                gmsh_definition[geo_key] = (
+                    2,
+                    apply_function(
+                        gmsh.model.occ.addPlaneSurface,
+                        (curve_tags,),
+                        geometry.get("extra_args"),
+                    ),
+                )
             case "surface-filling":
                 geo_curves = geometry["data"]
                 curve_loop = []
@@ -129,16 +177,16 @@ def get_fem_mesh(geometry_definition, open_gui="no", gmsh_hook=None):
                 for surface in geo_contour_surfaces:
                     _, gmsh_surface_tag = gmsh_definition[surface]
                     contour_surfaces_loop.append(gmsh_surface_tag)
-                hole_surfaces_loops = []
+                holes_surfaces_loops = []
                 geo_holes_surfaces = geometry["data"].get("holes")
                 if geo_holes_surfaces:
                     for hole_surfaces in geo_holes_surfaces:
                         hole_surfaces_loop = []
-                        for surface in hole_surfaces:
-                            _, gmsh_surface_tag = gmsh_definition[surface]
+                        for hole_surface in hole_surfaces:
+                            _, gmsh_surface_tag = gmsh_definition[hole_surface]
                             hole_surfaces_loop.append(gmsh_surface_tag)
-                        hole_surfaces_loops.append(hole_surfaces_loop)
-                surfaces_loops = [contour_surfaces_loop] + hole_surfaces_loops
+                        holes_surfaces_loops.append(hole_surfaces_loop)
+                surfaces_loops = [contour_surfaces_loop] + holes_surfaces_loops
                 shell_tags = [
                     gmsh.model.occ.addSurfaceLoop(loop) for loop in surfaces_loops
                 ]
