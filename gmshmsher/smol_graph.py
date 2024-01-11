@@ -14,9 +14,10 @@ class Graph(object):
         return iter(self.adj_list)
 
     def add_vertex(self, key):
-        self.adj_list[key] = {}
-        self.inv_adj_list[key] = set()
-        self.num_verts += 1
+        if key not in self.adj_list:
+            self.adj_list[key] = {}
+            self.inv_adj_list[key] = set()
+            self.num_verts += 1
 
     def del_vertex(self, key):
         i = self.get_vertex_edges(key)
