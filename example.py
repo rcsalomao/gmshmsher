@@ -6,13 +6,13 @@ geometry_1 = {
     "x2": {"type": "point", "data": (1, 0, 0)},
     "x3": {"type": "point", "data": (1, 1, 1)},
     "x4": {"type": "point", "data": (0, 1, 0)},
-    "line1": {"type": "line", "data": ("x1", "x2")},
-    "line2": {"type": "line", "data": ("x2", "x3")},
-    "line3": {"type": "line", "data": ("x3", "x4")},
-    "line4": {"type": "line", "data": ("x4", "x1")},
+    "line1": {"type": "line", "data": ["x1", "x2"]},
+    "line2": {"type": "line", "data": ["x2", "x3"]},
+    "line3": {"type": "line", "data": ["x3", "x4"]},
+    "line4": {"type": "line", "data": ["x4", "x1"]},
     "surface1": {
         "type": "surface-filling",
-        "data": ("line1", "line2", "line3", "line4"),
+        "data": ["line1", "line2", "line3", "line4"],
     },
 }
 geometry_2 = {
@@ -20,10 +20,10 @@ geometry_2 = {
     "x2": {"type": "point", "data": (1, 0, 0)},
     "x3": {"type": "point", "data": (1, 1, 0)},
     "x4": {"type": "point", "data": (0, 1, 0)},
-    "line1": {"type": "line", "data": ("x1", "x2")},
-    "line2": {"type": "line", "data": ("x2", "x3")},
-    "line3": {"type": "line", "data": ("x3", "x4")},
-    "line4": {"type": "line", "data": ("x4", "x1")},
+    "line1": {"type": "line", "data": ["x1", "x2"]},
+    "line2": {"type": "line", "data": ["x2", "x3"]},
+    "line3": {"type": "line", "data": ["x3", "x4"]},
+    "line4": {"type": "line", "data": ["x4", "x1"]},
     "circle1": {
         "type": "circle",
         "data": {
@@ -39,7 +39,7 @@ geometry_2 = {
     "surface1": {
         "type": "plane-surface",
         "data": {
-            "contour": ("line1", "line2", "line3", "line4"),
+            "contour": ["line1", "line2", "line3", "line4"],
             "holes": [["circle1"], ["circle2"]],
         },
     },

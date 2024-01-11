@@ -1,6 +1,6 @@
 import gmsh
-from .smol_graph import Graph
-from .kahn_algorithm import kahn_algorithm
+from .internal.smol_graph import Graph
+from .internal.kahn_algorithm import kahn_algorithm
 
 
 def apply_function(func, args, kwargs):
