@@ -221,7 +221,41 @@ def get_fem_mesh(geometry_definition, open_gui="no", gmsh_hook=None):
         while gmsh.fltk.isAvailable():
             gmsh.fltk.wait()
 
-    element_type_n_nodes_map = {1: 2, 2: 3, 4: 4, 15: 1}
+    element_type_n_nodes_map = {
+        1: 2,
+        2: 3,
+        3: 4,
+        4: 4,
+        5: 8,
+        6: 6,
+        7: 5,
+        8: 3,
+        9: 6,
+        10: 9,
+        11: 10,
+        12: 27,
+        13: 18,
+        14: 14,
+        15: 1,
+        16: 8,
+        17: 20,
+        18: 15,
+        19: 13,
+        20: 9,
+        21: 10,
+        22: 12,
+        23: 15,
+        24: 15,
+        25: 21,
+        26: 4,
+        27: 5,
+        28: 6,
+        29: 20,
+        30: 35,
+        31: 56,
+        92: 64,
+        93: 125,
+    }
     fem_mesh = {}
     get_nodes(fem_mesh)
     for geo_key, dim_tag in gmsh_definition.items():

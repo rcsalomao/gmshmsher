@@ -57,6 +57,9 @@ geometry_2 = {
     },
 }
 
+# pp(geometry_1)
+# mesh = get_fem_mesh(geometry_1, "both")
 pp(geometry_2)
 mesh = get_fem_mesh(geometry_2, "both")
+
 pp(mesh)
